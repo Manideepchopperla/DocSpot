@@ -26,7 +26,6 @@
 
        try {
          const response = await axios.post('/auth/login', { email, password });
-         console.log("Login successful:", response.data);
          // Store token in local storage or context
          localStorage.setItem('token', response.data.token);
          localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -108,7 +107,7 @@
             </div>
 
             {/* Role */}
-            <div className="relative">
+            {/* <div className="relative">
               <FaUserShield className="absolute top-3.5 left-3 text-blue-500" />
               <select
                 value={role}
@@ -120,7 +119,7 @@
                 <option value="doctor">Login as Doctor</option>
                 <option value="admin">Login as Admin</option>
               </select>
-            </div>
+            </div> */}
 
             {/* Submit */}
             <motion.button

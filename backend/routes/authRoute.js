@@ -18,7 +18,6 @@ router.post('/register', [
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  console.log("1")
 
   const { name, email, password, role, phone } = req.body;
 
@@ -29,7 +28,6 @@ router.post('/register', [
     if (user) {
       return res.status(400).json({ msg: 'User already exists' });
     }
-    console.log("2")
 
     // Create new user
     user = new User({
@@ -118,6 +116,7 @@ router.get('/me', auth, async (req, res) => {
     // If user is a doctor, include doctor details
     if (user.role === 'doctor') {
       const doctor = await Doctor.findOne({ user: req.user.id });
+      console.log("User found:", {user,doctor});
       return res.json({ user, doctor });
     }
     
@@ -127,5 +126,59 @@ router.get('/me', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+
+
+// Update user profile
+router.put('/users/me', auth, async (req, res) => {
+  const { name, phone,email, address } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    user.name = name || user.name;
+    user.phone = phone || user.phone;
+    user.address = address || user.address;
+    user.email = email || user.email;
+
+    await user.save();
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+// Update doctor profile
+router.put('/doctors/me', auth, async (req, res) => {
+  const {
+    specialty,
+    experience,
+    qualifications,
+    bio,
+    consultationFee
+  } = req.body;
+
+  try {
+    const doctor = await Doctor.findOne({ user: req.user.id });
+    if (!doctor) return res.status(404).json({ msg: "Doctor profile not found" });
+
+    doctor.specialty = specialty || doctor.specialty;
+    doctor.experience = experience || doctor.experience;
+    doctor.qualifications = qualifications || doctor.qualifications;
+    doctor.bio = bio || doctor.bio;
+    doctor.consultationFee = consultationFee || doctor.consultationFee;
+
+    await doctor.save();
+    res.json(doctor);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+
+
 
 module.exports = router;

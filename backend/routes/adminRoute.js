@@ -8,8 +8,7 @@ const Appointment = require('../models/appointmentModel');
 // Middleware to check if user is admin
 const adminCheck = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
-    console.log("Admin Check User:", user);
+    const user = await User.findById(req.user.id)
     
     if (!user || user.role !== 'admin') {
       return res.status(401).json({ msg: 'Not authorized as admin' });
@@ -77,7 +76,6 @@ router.get('/users', [auth, adminCheck], async (req, res) => {
 // @access  Admin
 router.get('/appointments', [auth, adminCheck], async (req, res) => {
   try {
-    const doctorId = req.user.id;
     const appointments = await Appointment.find()
       .populate('patient', ['name', 'email', 'phone'])
       .populate({
@@ -96,52 +94,54 @@ router.get('/appointments', [auth, adminCheck], async (req, res) => {
   }
 });
 
-router.get('/user/appointments', [auth, adminCheck], async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const appointments = await Appointment.find({ patient: userId})
-      .populate('patient', ['name', 'email', 'phone'])
-      .populate({
-        path: 'doctor',
-        populate: {
-          path: 'user',
-          select: 'name email phone'
-        }
-      })
-      .sort({ date: 1 });
+// router.get('/user/appointments', [auth, adminCheck], async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const appointments = await Appointment.find({ patient: userId})
+//       .populate('patient', ['name', 'email', 'phone'])
+//       .populate({
+//         path: 'doctor',
+//         populate: {
+//           path: 'user',
+//           select: 'name email phone'
+//         }
+//       })
+//       .sort({ date: 1 });
     
-    res.json(appointments);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+//     res.json(appointments);
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).send('Server Error');
+//   }
+// });
 
 
-router.get('/doctor/appointments', [auth, adminCheck], async (req, res) => {
-  try {
-    const doctorId = req.user.id;
-    const appointments = await Appointment.find({ doctor: doctorId, status: 'approved' })
-      .populate('patient', ['name', 'email', 'phone'])
-      .populate({
-        path: 'doctor',
-        populate: {
-          path: 'user',
-          select: 'name email phone'
-        }
-      })
-      .sort({ date: 1 });
+// router.get('/doctor/appointments', [auth, adminCheck], async (req, res) => {
+//   try {
+//     const doctorId = req.user.id;
+//     const appointments = await Appointment.find({ doctor: doctorId, status: 'approved' })
+//       .populate('patient', ['name', 'email', 'phone'])
+//       .populate({
+//         path: 'doctor',
+//         populate: {
+//           path: 'user',
+//           select: 'name email phone'
+//         }
+//       })
+//       .sort({ date: 1 });
     
-    res.json(appointments);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+//     res.json(appointments);
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).send('Server Error');
+//   }
+// });
 
 // @route   PUT /api/admin/appointments/:id/approve
 // @desc    Approve an appointment
 // @access  Admin
+
+
 router.put('/appointments/:id/approve', [auth, adminCheck], async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);

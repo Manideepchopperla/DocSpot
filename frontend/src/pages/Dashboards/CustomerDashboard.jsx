@@ -15,7 +15,7 @@ export default function PatientDashboard() {
   const [tab, setTab] = useState("doctors");
   const [search, setSearch] = useState("");
   const [upcoming, setUpcoming] = useState([]);
-  const [profile, setProfile] = useState({ name: "", age: "", contact: "" });
+  const [profile, setProfile] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [appointmentDate, setAppointmentDate] = useState("");
@@ -30,7 +30,6 @@ export default function PatientDashboard() {
             "x-auth-token": token,
           },
         });
-        console.log("Upcoming appointments fetched:", response.data); 
         setUpcoming(response.data);
       } catch (error) {
         console.error("Error fetching upcoming appointments:", error);
@@ -48,10 +47,42 @@ export default function PatientDashboard() {
       }
     };
 
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get("/auth/me", {
+          headers: {
+            "x-auth-token": token,
+          },
+        });
+        console.log("Profile fetched:", res.data);
+        setProfile(res.data);
+      }catch (err) {
+        console.error("Error fetching profile:", err);
+      }
+    };
+
     fetchUpcomingAppointments();
     fetchDoctors();
+    fetchProfile();
   }, []);
-        const formattedDate=(date) =>{
+
+
+  const updateProfile = async () => {
+    try {
+      const res = await axios.put("/auth/users/me", profile, {
+        headers: {
+          "x-auth-token": token,
+        },
+      });
+      console.log("Profile updated:", res.data);
+      alert("Profile updated successfully!");
+      setProfile(res.data);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  const formattedDate=(date) =>{
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -126,7 +157,7 @@ export default function PatientDashboard() {
         {[
           { key: "doctors", label: "Doctors", icon: <FaSun /> },
           { key: "upcoming", label: "Upcoming", icon: <FaCalendarAlt /> },
-          { key: "history", label: "History", icon: <FaHistory /> },
+          // { key: "history", label: "History", icon: <FaHistory /> },
           { key: "profile", label: "Profile", icon: <FaUser /> },
           
         ].map((t) => (
@@ -172,7 +203,7 @@ export default function PatientDashboard() {
               <h2 className="text-2xl font-bold mb-4">Available Doctors</h2>
               <ul className="space-y-3">
                 {doctors.map((doc) => (
-                  <li key={doc._id}>
+                  <li key={doc._id} className=" bg-slate-700 border-l-4 border-indigo-500 rounded-xl" >
                     <div
                       onClick={async () => {
                         if (selectedDoctor?._id === doc._id) {
@@ -265,19 +296,19 @@ export default function PatientDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onSubmit={handleProfileSubmit}
+              onSubmit={updateProfile}
               className="bg-slate-800 p-8 rounded-xl shadow-xl max-w-md mx-auto mt-6"
             >
               <h2 className="text-lg font-semibold mb-4">Edit Profile</h2>
-              {["name", "age", "contact"].map((key) => (
+              {["name", "email", "phone","address"].map((key) => (
                 <div key={key} className="mb-4">
                   <label className="block text-sm font-medium text-gray-300 mb-1 capitalize">
                     {key}
                   </label>
                   <input
-                    type="text"
+                    type={key === "email" ? "email" : "text"}
                     name={key}
-                    value={profile[key]}
+                    value={profile[key] || ""}
                     onChange={handleProfileChange}
                     className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder={`Enter your ${key}`}
@@ -293,7 +324,8 @@ export default function PatientDashboard() {
             </motion.form>
           )}
 
-          {tab === "history" && (
+
+          {/* {tab === "history" && (
             <motion.div
               key="history"
               initial={{ y: 20, opacity: 0 }}
@@ -304,7 +336,7 @@ export default function PatientDashboard() {
             >
               <p>No history available yet.</p>
             </motion.div>
-          )}
+          )} */}
           {/* {tab === "doctors" && (
             <motion.div
               key="doctors"

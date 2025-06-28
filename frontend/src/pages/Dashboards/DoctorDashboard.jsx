@@ -6,10 +6,21 @@ import axios from '../../api/axios'; // Import the Axios instance
 export default function DoctorDashboard() {
   const [tab, setTab] = useState("appointments");
   const [appointments, setAppointments] = useState([]);
-  const [profile, setProfile] = useState({ name: '', specialty: '', bio: '' });
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    specialty: '',
+    qualifications: '',
+    experience: '',
+    consultationFee: '',
+    bio: ''
+  });
+
   const token = localStorage.getItem('token'); // Get token from local storage
 
-  const tabs = ["appointments", "patients", "profile"];
+  const tabs = ["appointments", "profile"];
 
   const formattedDate=(date) =>{
     return new Date(date).toLocaleDateString("en-US", {
@@ -27,14 +38,42 @@ export default function DoctorDashboard() {
             'x-auth-token': token,
           }
         });
-        console.log("Appointments fetched:", response.data); // ✅ Debugging log
         setAppointments(response.data.filter(a => a.status != 'pending'));
       } catch (error) {
         console.error("Error fetching appointments:", error);
       }
     };
 
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get("/auth/me", {
+          headers: {
+            "x-auth-token": token,
+          },
+        });
+        console.log("Profile fetched:", res.data);
+
+        const { user, doctor } = res.data;
+
+        setProfile({
+          name: user?.name || '',
+          email: user?.email || '',
+          phone: user?.phone || '',
+          address: user?.address || '',
+          specialty: doctor?.specialty || '',
+          qualifications: (doctor?.qualifications || []).join(', '),
+          experience: doctor?.experience || '',
+          consultationFee: doctor?.consultationFee || '',
+          bio: doctor?.bio || ''
+        });
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      }
+    };
+
+
     fetchAppointments();
+    fetchProfile();
   }, []);
 
   const handleProfileChange = (e) => {
@@ -44,8 +83,29 @@ export default function DoctorDashboard() {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+
+    const updatedProfile = {
+      ...profile,
+      name: profile.name.trim(),
+      email: profile.email.trim(),
+      phone: profile.phone.trim(),
+      specialty: profile.specialty.trim(),
+      bio: profile.bio.trim(),
+      experience: Number(profile.experience),
+      consultationFee: Number(profile.consultationFee),
+      qualifications: profile.qualifications
+        .split(',')
+        .map(q => q.trim())
+        .filter(q => q)
+    };
+
     try {
-      await axios.put('/auth/me', profile, {
+      await axios.put('/auth/doctors/me', updatedProfile, {
+        headers: {
+          'x-auth-token': token,
+        }
+      });
+      await axios.put('/auth/users/me', updatedProfile, {
         headers: {
           'x-auth-token': token,
         }
@@ -53,8 +113,10 @@ export default function DoctorDashboard() {
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
+      alert("Failed to update profile.");
     }
   };
+
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col transition-colors duration-300">
@@ -98,7 +160,7 @@ export default function DoctorDashboard() {
                   <motion.li
                     key={a._id || idx}
                     whileHover={{ scale: 1.02 }}
-                    className="p-4 bg-slate-700 rounded-xl flex justify-between text-gray-300"
+                    className="p-4 bg-slate-700 rounded-xl flex justify-between text-gray-300 bg-slate-700 border-l-4 border-indigo-500 rounded-xl "
                   >
                     <span className="font-semibold text-white">{a.patient?.name || "Unknown"}</span>
                     <span className="text-gray-400">{formattedDate(a.date)}</span>
@@ -119,32 +181,89 @@ export default function DoctorDashboard() {
               onSubmit={handleProfileSubmit}
             >
               <h2 className="text-lg font-semibold mb-4">Edit Profile</h2>
-              {["name", "specialty", "bio"].map((key) => (
+
+              {/* User fields */}
+              {["name", "email", "phone","address"].map((key) => (
                 <div key={key} className="mb-4">
                   <label className="block text-sm font-medium text-gray-300 mb-1 capitalize">
                     {key}
                   </label>
-                  {key === "bio" ? (
-                    <textarea
-                      name={key}
-                      value={profile[key]}
-                      onChange={handleProfileChange}
-                      className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
-                      rows={4}
-                      placeholder="Add your bio"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      name={key}
-                      value={profile[key]}
-                      onChange={handleProfileChange}
-                      className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
-                      placeholder={`Enter your ${key}`}
-                    />
-                  )}
+                  <input
+                    type="text"
+                    name={key}
+                    value={profile[key] || ""}
+                    onChange={handleProfileChange}
+                    className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+                    placeholder={`Enter your ${key}`}
+                  />
                 </div>
               ))}
+
+              {/* Specialty dropdown */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Specialty
+                </label>
+                <select
+                  name="specialty"
+                  value={profile.specialty || ""}
+                  onChange={handleProfileChange}
+                  className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="" disabled>Select your specialty</option>
+                  {["Cardiology", "Dermatology", "Neurology", "Pediatrics", "Orthopedics"].map((specialty) => (
+                    <option key={specialty} value={specialty}>
+                      {specialty}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Doctor fields (number inputs) */}
+              {["experience", "consultationFee"].map((key) => (
+                <div key={key} className="mb-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-1 capitalize">
+                    {key === "consultationFee" ? "Consultation Fee (₹)" : key}
+                  </label>
+                  <input
+                    type="number"
+                    name={key}
+                    value={profile[key] || ""}
+                    onChange={handleProfileChange}
+                    className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+                    placeholder={`Enter your ${key}`}
+                  />
+                </div>
+              ))}
+
+              {/* Qualifications */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Qualifications (comma separated)
+                </label>
+                <input
+                  type="text"
+                  name="qualifications"
+                  value={profile.qualifications || ""}
+                  onChange={handleProfileChange}
+                  className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. MBBS, MD"
+                />
+              </div>
+
+              {/* Bio */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-1">Bio</label>
+                <textarea
+                  name="bio"
+                  value={profile.bio || ""}
+                  onChange={handleProfileChange}
+                  className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+                  rows={4}
+                  placeholder="Write about yourself"
+                />
+              </div>
+
               <button
                 type="submit"
                 className="w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-all"
@@ -154,7 +273,9 @@ export default function DoctorDashboard() {
             </motion.form>
           )}
 
-          {tab === "patients" && (
+
+
+          {/* {tab === "patients" && (
             <motion.div
               key="patients"
               initial={{ opacity: 0 }}
@@ -164,7 +285,7 @@ export default function DoctorDashboard() {
             >
               <p>No patient data available.</p>
             </motion.div>
-          )}
+          )} */}
         </AnimatePresence>
       </div>
     </div>

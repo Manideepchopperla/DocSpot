@@ -37,20 +37,18 @@ export default function RegisterPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(name+" "+value);
+
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log("Submitting form with data:", formData);
       const endpoint = '/auth/register'; // ← FIXED
       const response = await axios.post(endpoint, {
         ...formData,
         role: activeTab === "patient" ? "user" : "doctor",
       });
-      console.log("Registration successful:", response.data);
       window.location.href = '/login';
     } catch (err) {
       console.error("Registration failed:", err.response?.data || err.message);
