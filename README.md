@@ -1,8 +1,8 @@
-# 🩺 Doctor Appointment App
+🩺 Doctor Appointment App
 
 A simple and efficient doctor appointment booking system that allows users to book, manage, and track doctor visits easily. This app aims to streamline the process for both patients and healthcare providers.
 
-## 🚀 Features
+🚀 Features
 
 - 👨‍⚕️ Doctor & Patient Login
 - 📅 Book, Reschedule, and Cancel Appointments
@@ -10,7 +10,7 @@ A simple and efficient doctor appointment booking system that allows users to bo
 - 📜 Medical History Record Tracking
 - 📱 Responsive UI (Mobile + Web Friendly)
 
-## 🛠️ Tech Stack
+ 🛠️ Tech Stack
 
 - **Frontend**:  JavaScript, React(Vite) 
 - **Backend**: Node.js
